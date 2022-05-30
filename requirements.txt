@@ -1,0 +1,5 @@
+aiogram==2.20
+google_auth_oauthlib==0.5.1
+googleapiclient==2.49.0
+google==3.0.0
+requests==2.27.1
