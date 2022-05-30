@@ -36,10 +36,10 @@ os.system('docker run -p 49160:3000 -d m1haa/node-web-app')
 async def on_bot_join_channel(message: types.Message):
     if check_token_exist():
         album_name = message.chat.full_name
-        album_id = create_album(album_name)
-        add_to_json(album_name,album_name,album_id)
+        if not get_from_json(album_name):
+            album_id = create_album(album_name)
+            add_to_json(album_name,album_name,album_id)
     else:
-
         await message.answer('Токен авторизації відсутній.Помилка')
         await bot.leave_chat(message.chat.id)
 
