@@ -28,7 +28,7 @@ def check_token_exist() -> bool:
     return False
 
 
-#run dcoker file
+#run doker file
 os.system('cd server')
 os.system('docker run -p 49160:3000 -d m1haa/node-web-app')
 
