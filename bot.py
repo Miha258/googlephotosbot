@@ -29,8 +29,8 @@ def check_token_exist() -> bool:
 
 
 #run docker file
-# os.system('cd server')
-# os.system('docker run -p 49160:3000 -d m1haa/node-web-app')
+os.system('cd server')
+os.system('docker run -p 49160:3000 -d m1haa/node-web-app')
 
 @dp.message_handler(lambda message: message.new_chat_members[0].is_bot,content_types=types.ContentTypes.NEW_CHAT_MEMBERS)
 async def on_bot_join_channel(message: types.Message):
