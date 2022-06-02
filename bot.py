@@ -1,10 +1,8 @@
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types.message import ContentType
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.state import State, StatesGroup
-
+from aiogram.dispatcher.filters.state import State, StatesGroup  
 
 from Google import InvalidCode
 from init_service import *
@@ -19,6 +17,7 @@ storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
 
+
 class Form(StatesGroup):
     code = State()
 
@@ -27,10 +26,6 @@ def check_token_exist() -> bool:
         return True
     return False
 
-
-#run docker file
-os.system('cd server')
-os.system('docker run -p 49160:3000 -d m1haa/node-web-app')
 
 @dp.message_handler(lambda message: message.new_chat_members[0].is_bot,content_types=types.ContentTypes.NEW_CHAT_MEMBERS)
 async def on_bot_join_channel(message: types.Message):
@@ -77,11 +72,13 @@ async def check_code(message: types.Message, state: FSMContext):
         code = message.text
         init_service(code)
     except InvalidCode:
-        await state.finish()
         await message.answer('Код не дійсний.Схоже ви допустили помилку при введені коду,або ви пізно його ввели')
     else:
         await state.finish()
         await message.answer('Токен успішно згенеровано')
+
+
+
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
