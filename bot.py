@@ -3,11 +3,16 @@ from aiogram.types.message import ContentType
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup  
+from aiogram.utils.exceptions import FileIsTooBig
 
+from asyncio.exceptions import TimeoutError
+from googleapiclient.errors import HttpError
 from Google import InvalidCode
 from init_service import *
 from photos import *
 from json_manager import *
+
+
 
 API_TOKEN = '5323882359:AAFIUxLGcdgiEzEsYShmI6CwI9FvX1oKZOc'
 
@@ -17,9 +22,9 @@ storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
 
-
 class Form(StatesGroup):
     code = State()
+
 
 def check_token_exist() -> bool:
     if os.path.exists('token_photoslibrary_v1.pickle'):
@@ -44,26 +49,44 @@ async def on_bot_left_channel(message: types.Message):
     remove_from_json(message.chat.full_name)
         
 
-@dp.message_handler(content_types=[ContentType.DOCUMENT,ContentType.PHOTO])
-async def save_img(message: types.Message):
-    if check_token_exist():
+@dp.message_handler(content_types=[ContentType.DOCUMENT,ContentType.PHOTO,ContentType.VIDEO])
+async def save_img(message: types.Message): 
+    if check_token_exist() and get_from_json(message.chat.full_name):
         album_name = get_from_json(message.chat.full_name)['album_name']
         if album_name:
-            file_name = f'{message.message_id}.jpg'
-            if message.document:
-                await message.document.download(destination_file=file_name)
-            else:
-                await message.photo[-1].download(destination_file=file_name)
-            insert_mediafile_in_album(album_name,file_name)
+            try:
+                if not get_from_json(message.chat.full_name)['album_id']:
+                    album_id = create_album(album_name)
+                    change_album_id(message.chat.full_name,album_id)
+                
+                file_url = None
+                if message.document:
+                    file_url = await message.document.get_url()
+                elif message.photo:
+                    file_url = await message.photo[-1].get_url()
+                elif message.video: 
+                    file_url = await message.video.get_url()
+                if file_url:
+                    await insert_mediafile_in_album(album_name,file_url,str(message.message_id))
+                    
+            except FileIsTooBig:
+                await message.reply('Файл завелкикий для збереження')
+            except HttpError:
+                await message.reply('Щось пішло не так.Не можу знайти альбом для збереження.Спробуйте видалити і добавити мене \n або ви поставили не той аккаунт')
+            except TimeoutError:
+                await message.reply('Помилка завантаження відео')
+    else:
+        await message.reply(f'Токен авторизації відсутній.Помилка')
+        await bot.leave_chat(message.chat.id)
 
 
 @dp.message_handler(commands='settoken')
 async def change_account(message: types.Message):
     if check_token_exist():
         os.remove('token_photoslibrary_v1.pickle')
-    await Form.code.set() 
+    await Form.code.set()
     auth_url = get_auth_url()
-    await message.answer(f'Перейдіть по цьому посиланню і виберіть аккаунт після надішліть кінцеве посилання мені:\n{auth_url}')
+    await message.answer(f'Перейдіть по цьому посиланню і виберіть аккаунт після цього надішліть мені код:\n{auth_url}')
     
 
 @dp.message_handler(state=Form.code)
@@ -76,9 +99,7 @@ async def check_code(message: types.Message, state: FSMContext):
     else:
         await state.finish()
         await message.answer('Токен успішно згенеровано')
-
-
-
+        remove_all_albums_id()
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)

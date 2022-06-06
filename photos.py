@@ -1,8 +1,8 @@
 from json_manager import get_from_json
 from init_service import init_service
-import os
 import pickle
-import requests
+import aiohttp
+
 
 
 SERVICE = None
@@ -17,7 +17,7 @@ def create_album(album_name: str) -> str:
     return album.get('id')
 
 
-def create_mediafile(file_name: str) -> requests.Response:
+async def create_mediafile(url: str,message_id: str) -> bytes:
     upload_url = 'https://photoslibrary.googleapis.com/v1/uploads'
     token = pickle.load(open('token_photoslibrary_v1.pickle', 'rb'))
     headers = {
@@ -25,20 +25,22 @@ def create_mediafile(file_name: str) -> requests.Response:
         'Content-type': 'application/octet-stream',
         'X-Goog-Upload-Protocol': 'raw'
     }
+    headers['X-Goog-Upload-File-Name'] = message_id
+    async with aiohttp.ClientSession(headers=headers) as session:
+        async with session.get(url) as response: 
+            img = await response.read()
 
-    image_file = os.path.join(os.getcwd(), file_name)
-    headers['X-Goog-Upload-File-Name'] = file_name
-    img = open(image_file, 'rb').read() 
-    response = requests.post(upload_url, data=img, headers=headers)
-    return response
+        async with session.post(upload_url,data=img) as response:
+            return await response.read()
 
 
-def insert_mediafile_in_album(album_name: str,file_name: str) -> None:
+async def insert_mediafile_in_album(album_name: str,url: str,message_id: str) -> None:
     global SERVICE
 
     album_id = get_from_json(album_name)['album_id']
     SERVICE = init_service()
-    uploadToken = create_mediafile(file_name).content.decode('utf-8')
+    uploadToken = await create_mediafile(url,message_id)
+    uploadToken = uploadToken.decode('utf-8')
     request_body = {
         "albumId": album_id,
         'newMediaItems': [
@@ -52,7 +54,9 @@ def insert_mediafile_in_album(album_name: str,file_name: str) -> None:
     }
     if SERVICE:
         SERVICE.mediaItems().batchCreate(body=request_body).execute()
-        os.remove(file_name)
     else:
         print('Помилка ініціалізації сервісу Google')
+
+
+
 

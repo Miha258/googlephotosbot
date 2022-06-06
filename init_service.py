@@ -21,7 +21,7 @@ def get_auth_url() -> str:
   flow = flow = Flow.from_client_secrets_file(
             CLIENT_SECRET_FILE,
             scopes=SCOPES,
-            redirect_uri=f'http://{server_host()}:{server_port()}'
+            redirect_uri=f'https://{server_host()}/'
   )
   auth_url, _ = flow.authorization_url(prompt='consent')
   return auth_url

@@ -31,7 +31,7 @@ def create_service(client_secret_file, api_name, api_version,code=None, *scopes)
             flow: Flow = Flow.from_client_secrets_file(
                 CLIENT_SECRET_FILE,
                 scopes=SCOPES,
-                redirect_uri=f'http://{server_host()}:{server_port()}'
+                redirect_uri=f'https://{server_host()}/',
             )
             flow.fetch_token(code=code)
             cred = flow.credentials
