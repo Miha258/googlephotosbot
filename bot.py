@@ -14,7 +14,7 @@ from json_manager import *
 from datetime import datetime
 import os
 
-API_TOKEN = '5323882359:AAFIUxLGcdgiEzEsYShmI6CwI9FvX1oKZOc'
+API_TOKEN = ''
 
 
 bot = Bot(token=API_TOKEN)
